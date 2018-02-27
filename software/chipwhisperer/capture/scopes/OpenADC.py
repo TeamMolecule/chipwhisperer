@@ -165,7 +165,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
                     self.params.append(self.advancedSAD.getParams())
 
-                if cwtype == "cw1200":
+                if cwtype == "cw1200" or cwtype == "cwlite":
                     self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
                     self.params.append(self.decodeIO.getParams())
 

@@ -785,7 +785,7 @@ class CWExtraSettings(Parameterized):
         trigger_modules = {"Basic (Edge/Level)": self.MODULE_BASIC}
 
         if cwtype == "cwlite":
-            pass
+            trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
         elif cwtype == "cw1200":
             trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
             trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO

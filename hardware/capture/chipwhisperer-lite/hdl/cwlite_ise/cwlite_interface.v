@@ -121,6 +121,7 @@ module cwlite_interface(
 	wire [7:0] reg_datai_cw;
 	wire [7:0] reg_datai_reconfig;
 	wire [7:0] reg_datai_glitch;
+	wire [7:0] reg_datai_decode;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -129,12 +130,14 @@ module cwlite_interface(
 	wire [15:0] reg_hyplen_cw;
 	wire [15:0] reg_hyplen_glitch;
 	wire [15:0] reg_hyplen_reconfig;
+	wire [15:0] reg_hyplen_decode;
 	
 	wire ext_trigger;
-	wire adv_trigger;
 	wire extclk_mux;
 	wire clkgen, glitchclk, adc_sample_clk;
 	wire enable_avrprog;
+	wire advio_trigger_line;
+	wire decode_trigger;
 
 	openadc_interface oadc(
 		.reset_i(reset_i),
@@ -167,15 +170,14 @@ module cwlite_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig)
-		
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode)
 	);	
 	
 	wire enable_output_nrst;
@@ -212,9 +214,10 @@ module cwlite_interface(
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
 		.trigger_io4_i(target_io4),
-		//.trigger_ext_o(advio_trigger_line),
+		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(1'b0),
+		.trigger_decodedio_i(decode_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
 		
@@ -339,5 +342,30 @@ module cwlite_interface(
     .TRIG0(ila_trigbus) // IN BUS [63:0]
 	 );
 	 */
+	
+	reg_decodeiotrigger registers_decodetrigger (
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_decode), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_decode),
+		.reg_stream(),
+		
+		.ext_iomux(advio_trigger_line),
+		.sck(target_SCK),
+		.mosi(target_MOSI),
+		.miso(target_MISO),
+		.pdid_cs(target_PDIC),
+		.pdic(),
+				
+		.trig_out(decode_trigger)
+	);
  		
 endmodule

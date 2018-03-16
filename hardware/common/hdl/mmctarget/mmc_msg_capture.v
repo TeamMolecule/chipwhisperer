@@ -40,7 +40,9 @@ module mmc_msg_capture(
 	input 					mmc_cmd,
 
 	output [47:0]		msg_packet,
-	output 					msg_valid
+	output 					msg_valid,
+	output [2:0]		debug_state,
+	output [8:0]		debug_cnt
 );
 
 `define GET_START 3'b000
@@ -63,6 +65,8 @@ reg wait_for_r2, next_wait_for_r2;
 
 assign msg_packet = packet;
 assign msg_valid = valid;
+assign debug_state = state;
+assign debug_cnt = cnt;
 
 always @(posedge mmc_clk or posedge reset_i) begin
 	if (reset_i) begin
@@ -101,7 +105,7 @@ always @(*) begin
 		`GET_CMD: begin
 			next_packet[45-cnt] = mmc_cmd;
 			next_cnt = cnt + 1'b1;
-			if (cnt >= 6) begin
+			if (cnt >= 5) begin
 				next_state = `GET_CONTENT;
 				next_cnt = 9'b0;
 			end
@@ -109,7 +113,7 @@ always @(*) begin
 		`GET_CONTENT: begin
 			next_packet[39-cnt] = mmc_cmd;
 			next_cnt = cnt + 1'b1;
-			if (cnt >= 32) begin
+			if (cnt >= 31) begin
 				if (wait_for_r2) begin
 					next_state = `SKIP_R2_RESP;
 				end else begin
@@ -120,7 +124,7 @@ always @(*) begin
 		end
 		`SKIP_R2_RESP: begin
 			next_cnt = cnt + 1'b1;
-			if (cnt >= 120) begin
+			if (cnt >= 119) begin
 				next_state = `GET_CRC;
 				next_cnt = 9'b0;
 			end
@@ -128,7 +132,7 @@ always @(*) begin
 		`GET_CRC: begin
 			next_packet[7-cnt] = mmc_cmd;
 			next_cnt = cnt + 1'b1;
-			if (cnt >= 7) begin
+			if (cnt >= 6) begin
 				next_state = `GET_END;
 				next_cnt = 9'b0;
 			end

@@ -122,6 +122,7 @@ module cwlite_interface(
 	wire [7:0] reg_datai_reconfig;
 	wire [7:0] reg_datai_glitch;
 	wire [7:0] reg_datai_decode;
+	wire [7:0] reg_datai_mmctarg;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -131,6 +132,7 @@ module cwlite_interface(
 	wire [15:0] reg_hyplen_glitch;
 	wire [15:0] reg_hyplen_reconfig;
 	wire [15:0] reg_hyplen_decode;
+	wire [15:0] reg_hyplen_mmctarg;
 	
 	wire ext_trigger;
 	wire extclk_mux;
@@ -170,14 +172,14 @@ module cwlite_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode | reg_datai_mmctarg),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode)
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode | reg_hyplen_mmctarg)
 	);	
 	
 	wire enable_output_nrst;
@@ -367,5 +369,23 @@ module cwlite_interface(
 				
 		.trig_out(decode_trigger)
 	);
+	
+	reg_mmctarget registers_mmctarget(
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_mmctarg), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_stream(),
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_mmctarg),
+		.target_mmc_clk(target_hs1),
+		.target_mmc_cmd(target_hs2)					              
+   );
  		
 endmodule

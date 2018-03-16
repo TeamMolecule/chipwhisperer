@@ -26,6 +26,7 @@
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.ui.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.capture.utils.MMCCaptureDialog import MMCCaptureDialog as MMCCaptureDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
@@ -51,6 +52,7 @@ class CWCaptureGUI(CWMainGUI):
 
     def loadExtraModules(self):
         self.serialTerminal = SerialTerminalDialog(self, self.api)
+        self.mmcCapture = MMCCaptureDialog(self, self.api)
         self.glitch_explorer = GlitchExplorerDialog(self)
 
     def addSettingsDocks(self):
@@ -98,6 +100,9 @@ class CWCaptureGUI(CWMainGUI):
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.terminalAct)
+        self.mmcCaptureAct = QAction('MMC Capture', self, statusTip='Open MMC Capture',
+                                   triggered=self.mmcCapture.show)
+        self.toolMenu.addAction(self.mmcCaptureAct)
         self.glitchExplorerAct = QAction('Glitch Explorer', self, statusTip='Open Glitch Explorer Table',
                                         triggered=self.glitch_explorer.show)
         self.toolMenu.addAction(self.glitchExplorerAct)

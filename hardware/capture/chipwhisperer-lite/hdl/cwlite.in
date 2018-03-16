@@ -53,21 +53,21 @@ setup.v = Setup File
 ../../../common/hdl/clockglitch/clockglitch_s6.v
 ../../../common/hdl/clockglitch/reg_clockglitch.v
 ../../../common/hdl/clockglitch/trigger_resync.v
-../../../common/hdl/io_trigger/reg_iotrigger.v
-../../../common/hdl/io_trigger/trigger_system.v
 ../../../common/hdl/reg_chipwhisperer.v
 ../../../common/hdl/reconfig/reg_reconfig.v
 ../../../common/hdl/fifo_stream/fifo_top_stream.v
-../../../common/hdl/io_trigger/reg_iotrigger.v
 ../../../common/hdl/io_decode_trigger/reg_decodeiotrigger.v
 ../../../common/hdl/io_decode_trigger/spi_decoder.v
 ../../../common/hdl/serialtarget/targ_async_receiver.v
+../../../common/hdl/mmctarget/reg_mmctarget.v
+../../../common/hdl/mmctarget/mmc_msg_capture.v
 
 [CoreGen Files]
 #Add XCO files. You can just list the filename, OR have the CoreGen files be
 #auto-generated as well by specifying the section name
 fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
 icap_fifo.xco = ICAP FIFO Setup
+fifo_mmc_cmd.xco = MMC FIFO Setup
 
 [ADC FIFO CoreGen Setup]
 InputFile = fifoonly_adcfifo.xco.in
@@ -81,6 +81,9 @@ data_count_width = 13
 
 [ICAP FIFO Setup]
 InputFile = icap_fifo.xco.in
+
+[MMC FIFO Setup]
+InputFile = fifo_mmc_cmd.xco.in
 
 [Setup File]
 CWLITE

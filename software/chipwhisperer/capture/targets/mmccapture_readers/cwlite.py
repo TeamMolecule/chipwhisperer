@@ -52,9 +52,9 @@ class MMCCapture_ChipWhispererLite(MMCCaptureTemplate):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_STATUS, maxResp=1)
         count = data[0] & 0x3F
         full = (data[0] >> 6) & 1
-        empty = (data[0] >> 7) & 1
-        if full:
-            logging.warning('MMC capture buffer overflow!')
+        overflow = (data[0] >> 7) & 1
+        if overflow:
+            logging.warning('MMC capture buffer overflow! Reg: 0x{:X}'.format(data[0]))
         return count
 
     def hardware_read(self):

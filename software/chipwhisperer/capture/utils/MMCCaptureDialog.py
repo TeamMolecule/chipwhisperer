@@ -94,8 +94,7 @@ class MMCCaptureDialog(QtFixes.QDialog):
         cmain = QColor(color)
         self.textOut.moveCursor(QTextCursor.End)
         self.textOut.setTextColor(cmain)
-        self.textOut.insertPlainText(data)
-        self.textOut.insertPlainText('\n')
+        self.textOut.insertPlainText(data + '\n')
         self.textOut.moveCursor(QTextCursor.End)
 
 
@@ -111,7 +110,7 @@ class MMCCaptureDialog(QtFixes.QDialog):
 
         while pavail > 0:
             data = self.driver.read()
-            self.addTextOut(data)
+            self.addTextOut(str(data))
             QCoreApplication.processEvents()
             pavail = self.driver.count()
 

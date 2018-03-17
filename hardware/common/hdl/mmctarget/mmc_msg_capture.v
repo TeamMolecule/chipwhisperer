@@ -56,6 +56,7 @@ module mmc_msg_capture(
 `define CMD2 6'd2
 `define CMD9 6'd9
 `define CMD10 6'd10
+`define CMD63 6'd63
 
 reg [47:0] packet, next_packet;
 reg valid, next_valid;
@@ -101,6 +102,8 @@ always @(*) begin
 			next_packet[46] = mmc_cmd;
 			next_state = `GET_CMD;
 			next_cnt = 0;
+			if (mmc_cmd)
+				next_wait_for_r2 = 0; // malformed response
 		end
 		`GET_CMD: begin
 			next_packet[45-cnt] = mmc_cmd;
@@ -108,6 +111,8 @@ always @(*) begin
 			if (cnt >= 5) begin
 				next_state = `GET_CONTENT;
 				next_cnt = 9'b0;
+				if ({packet[45:41], mmc_cmd} != `CMD63)
+					next_wait_for_r2 = 0; // malformed response
 			end
 		end
 		`GET_CONTENT: begin

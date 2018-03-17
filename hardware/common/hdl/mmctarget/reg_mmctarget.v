@@ -67,7 +67,6 @@ assign reg_stream = 1'b0;
   
 wire [7:0] targmmc_status;
 wire [47:0] fifo_data;
-reg [47:0] rd_data;
 wire fifo_data_valid;
 
 // get size
@@ -90,21 +89,19 @@ always @(posedge clk) begin
 	if (reg_read) begin
 		case (reg_address)		
 			`TARGMMC_STATUS_ADDR: begin reg_datao_reg <= targmmc_status; end
-			`TARGMMC_DATA_ADDR: begin reg_datao_reg <= rd_data[reg_bytecnt*8 +: 8];	end
+			`TARGMMC_DATA_ADDR: begin reg_datao_reg <= fifo_data_valid ? fifo_data[reg_bytecnt*8 +: 8] : 48'b0;	end
 			default: begin reg_datao_reg <= 0; end
 		endcase
 	end
 end
 
-// read enable
+// read enable (pop stack after last byte is read)
 reg fifo_rd;
 always @(posedge clk) begin
-	if ((reg_read) && (reg_address == `TARGMMC_DATA_ADDR) && (reg_bytecnt == 0)) begin
+	if ((reg_read) && (reg_address == `TARGMMC_DATA_ADDR) && (reg_bytecnt == 5)) begin
 		fifo_rd <= 1'b1;
-		rd_data <= fifo_data_valid ? fifo_data : 48'b0;
 	end else begin
 		fifo_rd <= 1'b0;
-		rd_data <= rd_data;
 	end
 end
 

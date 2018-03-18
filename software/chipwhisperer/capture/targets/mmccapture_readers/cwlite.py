@@ -58,4 +58,4 @@ class MMCCapture_ChipWhispererLite(MMCCaptureTemplate):
         return count
 
     def hardware_read(self):
-        return self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, maxResp=6)
+        return self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, maxResp=10)

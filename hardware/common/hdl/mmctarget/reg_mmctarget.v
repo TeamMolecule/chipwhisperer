@@ -66,7 +66,7 @@ assign reg_stream = 1'b0;
 `define TARGMMC_DATA_ADDR 60
   
 wire [7:0] targmmc_status;
-wire [47:0] fifo_data;
+wire [79:0] fifo_data;
 wire fifo_data_valid;
 
 // get size
@@ -76,7 +76,7 @@ assign reg_hyplen = reg_hyplen_reg;
 always @(reg_hypaddress) begin
 	case (reg_hypaddress)
 		`TARGMMC_STATUS_ADDR: reg_hyplen_reg <= 1;
-		`TARGMMC_DATA_ADDR: reg_hyplen_reg <= 6;
+		`TARGMMC_DATA_ADDR: reg_hyplen_reg <= 10;
 		default: reg_hyplen_reg<= 0;
 	endcase
 end    
@@ -89,7 +89,7 @@ always @(posedge clk) begin
 	if (reg_read) begin
 		case (reg_address)		
 			`TARGMMC_STATUS_ADDR: begin reg_datao_reg <= targmmc_status; end
-			`TARGMMC_DATA_ADDR: begin reg_datao_reg <= fifo_data_valid ? fifo_data[reg_bytecnt*8 +: 8] : 48'b0;	end
+			`TARGMMC_DATA_ADDR: begin reg_datao_reg <= fifo_data_valid ? fifo_data[reg_bytecnt*8 +: 8] : 8'b0;	end
 			default: begin reg_datao_reg <= 0; end
 		endcase
 	end
@@ -98,19 +98,26 @@ end
 // read enable (pop stack after last byte is read)
 reg fifo_rd;
 always @(posedge clk) begin
-	if ((reg_read) && (reg_address == `TARGMMC_DATA_ADDR) && (reg_bytecnt == 5)) begin
+	if ((reg_read) && (reg_address == `TARGMMC_DATA_ADDR) && (reg_bytecnt == 9)) begin
 		fifo_rd <= 1'b1;
 	end else begin
 		fifo_rd <= 1'b0;
 	end
 end
 
+// counter for last packet
+reg [31:0] counter;
+always @(posedge target_mmc_clk or posedge reset_i) begin
+	if (capture_packet_valid || reset_i) begin
+		counter <= 32'b0;
+	end else begin
+		counter <= counter + 32'b1;
+	end
+end
+
 // capture
-wire [31:0] capture_ts;
-wire [31:0] tmp; // TODO: remove
 wire [47:0] capture_packet;
 wire capture_packet_valid;
-assign capture_ts = 32'b0;
 mmc_msg_capture msg_capture (
 	.clk(clk),
 	.reset_i(reset_i),
@@ -125,10 +132,10 @@ fifo_mmc_cmd tx_fifo (
 	.rd_clk(clk),
 	.wr_clk(target_mmc_clk),
 	.rst(reset_i),
-	.din({capture_ts, capture_packet}),
+	.din({counter, capture_packet}),
 	.wr_en(capture_packet_valid),
 	.rd_en(fifo_rd),
-	.dout({tmp, fifo_data}),
+	.dout(fifo_data),
 	.full(targmmc_status[6]),
 	.empty(),
 	.overflow(targmmc_status[7]),

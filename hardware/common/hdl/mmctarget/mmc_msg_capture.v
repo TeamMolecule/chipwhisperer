@@ -45,6 +45,8 @@ module mmc_msg_capture(
 	output [8:0]		debug_cnt
 );
 
+parameter DATA_RELATED_ONLY = 0;
+
 `define GET_START 3'b000
 `define GET_TRANSMITTER 3'b001
 `define GET_CMD 3'b010
@@ -53,10 +55,20 @@ module mmc_msg_capture(
 `define GET_CRC 3'b110
 `define GET_END 3'b111
 
-`define CMD2 6'd2
-`define CMD9 6'd9
-`define CMD10 6'd10
+`define ALL_SEND_CID 6'd2
+`define SEND_CSD 6'd9
+`define SEND_CID 6'd10
 `define CMD63 6'd63
+
+`define READ_DAT_UNTIL_STOP 6'd11
+`define STOP_TRANSMISSION 6'd12
+`define SET_BLOCKLEN 6'd16
+`define READ_SINGLE_BLOCK 6'd17
+`define READ_MULTIPLE_BLOCK 6'd18
+`define WRITE_DAT_UNTIL_STOP 6'd20
+`define SET_BLOCK_COUNT 6'd23
+`define WRITE_BLOCK 6'd24
+`define WRITE_MULTIPLE_BLOCK 6'd25
 
 reg [47:0] packet, next_packet;
 reg valid, next_valid;
@@ -145,12 +157,22 @@ always @(*) begin
 		`GET_END: begin
 			next_packet[0] = mmc_cmd;
 			next_state = `GET_START;
-			if (packet[46] && (packet[45:40] == `CMD2 || packet[45:40] == `CMD9 || packet[45:40] == `CMD10)) begin
+			if (packet[46] && (packet[45:40] == `ALL_SEND_CID || packet[45:40] == `SEND_CSD || packet[45:40] == `SEND_CID)) begin
 				next_wait_for_r2 = 1'b1;
 			end else begin
 				next_wait_for_r2 = 1'b0;
 			end
-			next_valid = 1'b1;
+			next_valid = DATA_RELATED_ONLY ? (
+				packet[45:40] == `READ_DAT_UNTIL_STOP ||
+				packet[45:40] == `STOP_TRANSMISSION ||
+				packet[45:40] == `SET_BLOCKLEN ||
+				packet[45:40] == `READ_SINGLE_BLOCK ||
+				packet[45:40] == `READ_MULTIPLE_BLOCK ||
+				packet[45:40] == `WRITE_DAT_UNTIL_STOP ||
+				packet[45:40] == `SET_BLOCK_COUNT ||
+				packet[45:40] == `WRITE_BLOCK ||
+				packet[45:40] == `WRITE_MULTIPLE_BLOCK
+			) : 1; // ignore packets if specified
 		end
 		default: next_state = `GET_START;
 	endcase

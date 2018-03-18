@@ -100,16 +100,16 @@ class MMCPacket:
         CMD62 = 62
         CMD63 = 63
 
-    def __init__(self, raw, count):
+    def __init__(self, raw, num):
         self.crc7 = (raw >> 1) & 0x7F
         self.content = (raw >> 8) & 0xFFFFFFFF
         self.cmd = MMCPacket.Cmd((raw >> 40) & 0x3F)
         self.is_req = (raw >> 46) & 0x1
         self.type = MMCPacket.TYPE_REQ if self.is_req else MMCPacket.TYPE_RSP
-        self.count = count
+        self.num = num
 
     def __str__(self):
-        return '{} [+{:.4f}us] {}, content=0x{:X}, crc7=0x{:X}'.format(self.type, self.count / 52.0, self.cmd, self.content, self.crc7)
+        return '[{:>5}] {} {}, content=0x{:X}, crc7=0x{:X}'.format(self.num, self.type, self.cmd, self.content, self.crc7)
 
 class MMCCaptureTemplate(Parameterized, Plugin):
 
@@ -148,7 +148,7 @@ class MMCCaptureTemplate(Parameterized, Plugin):
     def read(self):
         data = self.hardware_read()
         data = data[0:6] + b'\x00\x00' + data[6:]
-        raw, count = struct.unpack('<QI', data)
+        raw, count = struct.unpack('<QH', data)
         return MMCPacket(raw, count)
 
     def hardware_count(self):

@@ -84,6 +84,8 @@ InputFile = icap_fifo.xco.in
 
 [MMC FIFO Setup]
 InputFile = fifo_mmc_cmd.xco.in
+input_depth = 4096
+output_depth = 4096
 
 [Setup File]
 CWLITE

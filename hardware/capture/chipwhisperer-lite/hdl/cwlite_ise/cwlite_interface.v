@@ -123,6 +123,7 @@ module cwlite_interface(
 	wire [7:0] reg_datai_glitch;
 	wire [7:0] reg_datai_decode;
 	wire [7:0] reg_datai_mmctarg;
+	wire [7:0] reg_datai_mmctrig;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -133,6 +134,7 @@ module cwlite_interface(
 	wire [15:0] reg_hyplen_reconfig;
 	wire [15:0] reg_hyplen_decode;
 	wire [15:0] reg_hyplen_mmctarg;
+	wire [15:0] reg_hyplen_mmctrig;
 	
 	wire ext_trigger;
 	wire extclk_mux;
@@ -140,6 +142,7 @@ module cwlite_interface(
 	wire enable_avrprog;
 	wire advio_trigger_line;
 	wire decode_trigger;
+	wire mmc_trigger;
 
 	openadc_interface oadc(
 		.reset_i(reset_i),
@@ -172,14 +175,14 @@ module cwlite_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode | reg_datai_mmctarg),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode | reg_datai_mmctarg | reg_datai_mmctrig),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode | reg_hyplen_mmctarg)
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode | reg_hyplen_mmctarg | reg_hyplen_mmctrig)
 	);	
 	
 	wire enable_output_nrst;
@@ -220,6 +223,7 @@ module cwlite_interface(
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(1'b0),
 		.trigger_decodedio_i(decode_trigger),
+		.trigger_mmc_i(mmc_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
 		
@@ -387,5 +391,26 @@ module cwlite_interface(
 		.target_mmc_clk(target_hs1),
 		.target_mmc_cmd(target_hs2)					              
    );
+	
+	reg_mmctrigger registers_mmctrigger (
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_mmctrig), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_mmctrig),
+		.reg_stream(),
+		
+		.target_mmc_clk(target_hs1),
+		.target_mmc_cmd(target_hs2),
+				
+		.trig_out(mmc_trigger)
+	);
  		
 endmodule

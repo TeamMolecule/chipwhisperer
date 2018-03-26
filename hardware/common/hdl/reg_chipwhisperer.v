@@ -59,6 +59,7 @@ module reg_chipwhisperer(
 	input				trigger_advio_i, 
 	input          trigger_decodedio_i,
 	input				trigger_anapattern_i,
+	input				trigger_mmc_i,
 	
 	/* Clock Sources */
 	input				clkgen_i,
@@ -452,7 +453,8 @@ module reg_chipwhisperer(
 	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
 						   (registers_cwtrigmod[2:0] == 3'b001) ? trigger_advio_i : 
 							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i :
-							(registers_cwtrigmod[2:0] == 3'b011) ? trigger_decodedio_i
+							(registers_cwtrigmod[2:0] == 3'b011) ? trigger_decodedio_i :
+							(registers_cwtrigmod[2:0] == 3'b100) ? trigger_mmc_i
 							: 1'b0;
 							
 	 assign trigger_ext_o = trigger_ext;

@@ -51,7 +51,8 @@ module reg_mmctrigger(
 	  *   [31:26] compare cmd
 	  *   [25] compare transmission bit
 	  *   [24:23] compare operation for data (see defines below)
-	  *   [22:3] reserved
+	  *   [22] trigger on NEXT packet (delay trigger output by one packet)
+	  *   [21:3] reserved
 	  *   [2] enable data compare
 	  *   [1] enable cmd compare
 	  *   [0] enable transmission compare
@@ -82,6 +83,7 @@ module reg_mmctrigger(
 	 wire [5:0] cmp_cmd;
 	 wire cmp_transmission;
 	 wire [1:0] cmp_data_op;
+	 wire cmp_delay_next;
 	 wire cmp_data_en;
 	 wire cmp_cmd_en;
 	 wire cmp_transmission_en;
@@ -93,6 +95,7 @@ module reg_mmctrigger(
 	 assign cmp_cmd = cnf_reg[31:26];
 	 assign cmp_transmission = cnf_reg[25];
 	 assign cmp_data_op = cnf_reg[24:23];
+	 assign cmp_delay_next = cnf_reg[22];
 	 assign cmp_data_en = cnf_reg[2];
 	 assign cmp_cmd_en = cnf_reg[1];
 	 assign cmp_transmission_en = cnf_reg[0];
@@ -135,6 +138,7 @@ module reg_mmctrigger(
 	wire cmd_matches;
 	wire transmission_matches;
 	wire all_matches;
+	reg last_all_matches;
 
 	always @* begin
 		case (cmp_data_op)
@@ -150,6 +154,14 @@ module reg_mmctrigger(
 	assign transmission_matches = (msg_packet[46] == cmp_transmission) || !cmp_transmission_en;
 	assign all_matches = data_matches && cmd_matches && transmission_matches;
 
+	always @(posedge msg_valid or posedge reset_i) begin
+		if (reset_i) begin
+			last_all_matches <= 0;
+		end else begin
+			last_all_matches <= all_matches;
+		end
+	end
+
 	/* Trigger output */
 	reg trig;
 	reg trig_s1, trig_sync;
@@ -160,7 +172,7 @@ module reg_mmctrigger(
 	always @(posedge target_mmc_clk or posedge reset_i) begin
 		if (reset_i || trig_ack_sync) begin
 			trig <= 0;
-		end else if (msg_valid && all_matches) begin
+		end else if (msg_valid && (cmp_delay_next ? last_all_matches : all_matches)) begin
 			trig <= 1;
 		end
 	end

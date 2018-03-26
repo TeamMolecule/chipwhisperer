@@ -92,6 +92,8 @@ module reg_clockglitch(
 	 `define CLOCKGLITCH_LEN      8
 	 `define CLOCKGLITCH_OFFSET    25
 	 `define CLOCKGLITCH_OFFSET_LEN 8
+	 `define CLOCKGLITCH_REPEAT		62
+	 `define CLOCKGLITCH_REPEAT_LEN 4
 	 
 `ifdef SUPPORT_GLITCH_READBACK
 	 `define GLITCHCYCLES_CNT 19
@@ -123,11 +125,14 @@ module reg_clockglitch(
   
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
+
+	 reg [31:0] clockglitch_repeat_reg;
 	 
 	 always @(reg_hypaddress) begin
 		case (reg_hypaddress)
             `CLOCKGLITCH_SETTINGS: reg_hyplen_reg <= `CLOCKGLITCH_LEN;
 				`CLOCKGLITCH_OFFSET: reg_hyplen_reg <= `CLOCKGLITCH_OFFSET_LEN;
+				`CLOCKGLITCH_REPEAT: reg_hyplen_reg <= `CLOCKGLITCH_REPEAT_LEN;
 `ifdef SUPPORT_GLITCH_READBACK
 				`GLITCHCYCLES_CNT: reg_hyplen_reg <= `GLITCHCYCLES_CNT_LEN;
 				`GLITCH_RECONFIG_RB_ADDR: reg_hyplen_reg <= `GLITCH_RECONFIG_RB_LEN;
@@ -206,8 +211,8 @@ module reg_clockglitch(
 	 wire [1:0] glitch_trigger_src;
 	 assign glitch_trigger_src = clockglitch_settings_reg[43:42];
 	 
-	 wire [7:0] max_glitches;
-	 assign max_glitches = clockglitch_settings_reg[55:48];
+	 wire [31:0] max_glitches;
+	 assign max_glitches = clockglitch_settings_reg[55:48] == 8'd0 ? clockglitch_repeat_reg : {24'd0, clockglitch_settings_reg[55:48]};
 	 
 	 wire       sourceclk;
 	 assign sourceclk = (clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1 :
@@ -252,7 +257,7 @@ module reg_clockglitch(
 			oneshot <= 1'b0;		
 	 end
 	
-	 reg [7:0] glitch_cnt;
+	 reg [31:0] glitch_cnt;
 	 reg glitch_go;
 	 always @(posedge sourceclk) begin
 		if (glitch_trigger)
@@ -263,7 +268,7 @@ module reg_clockglitch(
 	
 	 always @(posedge sourceclk) begin
 		if (glitch_go)
-			glitch_cnt <= glitch_cnt + 8'd1;
+			glitch_cnt <= glitch_cnt + 32'd1;
 		else
 			glitch_cnt <= 0;
 	 end
@@ -308,6 +313,7 @@ module reg_clockglitch(
 			case (reg_address)		
 				`CLOCKGLITCH_SETTINGS: begin reg_datao_reg <= clockglitch_settings_read[reg_bytecnt*8 +: 8]; end
 				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_read_reg[reg_bytecnt*8 +: 8]; end
+				`CLOCKGLITCH_REPEAT: begin reg_datao_reg <= clockglitch_repeat_reg[reg_bytecnt*8 +: 8]; end
 `ifdef SUPPORT_GLITCH_READBACK
 				`GLITCH_RECONFIG_RB_ADDR: begin reg_datao_reg <= clockglitch_readback_reg[reg_bytecnt*8 +: 8]; end
 				`GLITCHCYCLES_CNT: begin reg_datao_reg <= clockglitch_cnt[reg_bytecnt*8 +: 8]; end
@@ -338,6 +344,7 @@ module reg_clockglitch(
 			clockglitch_settings_reg <= 0;
 			clockglitch_offset_reg <= 0;
 			clockglitch_cnt_rst <= 0;
+			clockglitch_repeat_reg <= 0;
 `ifdef SUPPORT_GLITCH_READBACK
 			clockglitch_readback_reg <= {8'd0, 8'd10, 8'd0, 8'd10, 16'd0, 16'd0};
 `endif
@@ -348,6 +355,7 @@ module reg_clockglitch(
 			case (reg_address)
 				`CLOCKGLITCH_SETTINGS: clockglitch_settings_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 				`CLOCKGLITCH_OFFSET: clockglitch_offset_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				`CLOCKGLITCH_REPEAT: clockglitch_repeat_reg[reg_bytecnt*8 +: 8] <= reg_datai;
 `ifdef SUPPORT_GLITCH_READBACK
 				`GLITCHCYCLES_CNT: clockglitch_cnt_rst <= reg_datai[0];
 				`GLITCH_RECONFIG_RB_ADDR: clockglitch_readback_reg[reg_bytecnt*8 +: 8] <= reg_datai;	

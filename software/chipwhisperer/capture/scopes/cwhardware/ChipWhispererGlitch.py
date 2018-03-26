@@ -36,6 +36,7 @@ from chipwhisperer.common.utils import util
 glitchaddr = 51
 glitchoffsetaddr = 25
 glitchreadbackaddr = 56
+glitchrepeataddr = 62
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -359,14 +360,14 @@ class GlitchSettings(util.DisableNewAttr):
         the glitch module to produce stronger glitches (especially during
         voltage glitching).
 
-        Repeat counter must be in the range [1, 255].
+        Repeat counter must be in the range [1, 2**32].
 
         Getter: Return the current repeat value (integer)
 
         Setter: Set the repeat counter
             Raises:
                 TypeError if value not an integer
-                ValueError if value outside [1, 255]
+                ValueError if value outside [1, 2**32]
         """
         return self.cwg.numGlitches()
 
@@ -377,8 +378,8 @@ class GlitchSettings(util.DisableNewAttr):
         except ValueError:
             raise TypeError("Can't convert %s to integer" % value, value)
 
-        if int_val < 1 or int_val > 255:
-            raise ValueError("New repeat value %d is outside range [1, 255]", int_val)
+        if int_val < 1 or int_val > 2**32:
+            raise ValueError("New repeat value %d is outside range [1, 2**32]", int_val)
 
         self.cwg.setNumGlitches(int_val)
 
@@ -753,21 +754,40 @@ class ChipWhispererGlitch(Parameterized):
     def setNumGlitches(self, num):
         """Set number of glitches to occur after a trigger"""
         num = int(num)
-        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        if num < 1:
+            num = 1
+        num = num - 1
+
+        resp = self.oa.sendMessage(CODE_READ, glitchrep, Validate=False, maxResp=8)
 
         if resp is None or len(resp) < 8:
             logging.warning('Glitch Module not present?')
             return
 
-        if num < 1:
-            num = 1
-        resp[6] = num-1
+        resp[6] = num if num <= 255 else 0
+        # backwards compatibility
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
+        # extended num_glitches
+        if num == 0 or num > 255:
+            cmd = bytearray(4)
+            cmd[0] = ((num >> 0) & 0xFF)
+            cmd[1] = ((num >> 8) & 0xFF)
+            cmd[2] = ((num >> 16) & 0xFF)
+            cmd[3] = ((num >> 24) & 0xFF)
+            self.oa.sendMessage(CODE_WRITE, glitchrepeataddr, cmd)
 
     def numGlitches(self):
         """Get number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
-        return resp[6]+1
+        num = resp[6]
+        if num == 0:
+            resp = self.oa.sendMessage(CODE_READ, glitchrepeataddr, Validate=False, maxResp=4)
+            num = resp[0]
+            num |= resp[1] << 8
+            num |= resp[2] << 16
+            num |= resp[3] << 24
+        return num+1
 
     @setupSetParam("Glitch Trigger")
     def setGlitchTrigger(self, trigger):

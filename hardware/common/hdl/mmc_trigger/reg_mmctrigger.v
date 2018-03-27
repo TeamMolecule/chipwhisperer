@@ -48,11 +48,12 @@ module reg_mmctrigger(
 
 	 /* CFG register (addr 63) format:
 	  *   [63:32] (4 bytes) compare data
-	  *   [31:26] compare cmd
-	  *   [25] compare transmission bit
-	  *   [24:23] compare operation for data (see defines below)
-	  *   [22] trigger on NEXT packet (delay trigger output by one packet)
-	  *   [21:3] reserved
+	  *   [31] reserved
+	  *   [30] compare transmission bit
+	  *   [29:24] compare cmd
+	  *   [23:6] reserved
+	  *   [5:4] compare operation for data (see defines below)
+	  *   [3] trigger on NEXT packet (delay trigger output by one packet)
 	  *   [2] enable data compare
 	  *   [1] enable cmd compare
 	  *   [0] enable transmission compare
@@ -92,10 +93,10 @@ module reg_mmctrigger(
 	 wire msg_valid;
 	 
 	 assign cmp_data = cnf_reg[63:32];
-	 assign cmp_cmd = cnf_reg[31:26];
-	 assign cmp_transmission = cnf_reg[25];
-	 assign cmp_data_op = cnf_reg[24:23];
-	 assign cmp_delay_next = cnf_reg[22];
+	 assign cmp_transmission = cnf_reg[30];
+	 assign cmp_cmd = cnf_reg[29:24];
+	 assign cmp_data_op = cnf_reg[5:4];
+	 assign cmp_delay_next = cnf_reg[3];
 	 assign cmp_data_en = cnf_reg[2];
 	 assign cmp_cmd_en = cnf_reg[1];
 	 assign cmp_transmission_en = cnf_reg[0];

@@ -31,6 +31,7 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as Chi
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererMMCTrigger as ChipWhispererMMCTrigger
 import _qt as openadc_qt
 from base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -76,6 +77,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
+        self.mmcTrigger = None
 
         self._is_connected = False
 
@@ -173,6 +175,10 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
+                if cwtype == "cwlite":
+                    self.mmcTrigger = ChipWhispererMMCTrigger.ChipWhispererMMCTrigger(self.qtadc.sc)
+                    self.params.append(self.mmcTrigger.getParams())
+
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
@@ -202,6 +208,10 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             if self.digitalPattern is not None:
                 self.digitalPattern.getParams().remove()
                 self.digitalPattern = None
+
+            if self.mmcTrigger is not None:
+                self.mmcTrigger.getParams().remove()
+                self.mmcTrigger = None
 
         # TODO Fix this hack
         if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):

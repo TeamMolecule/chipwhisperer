@@ -714,6 +714,7 @@ class CWExtraSettings(Parameterized):
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
     MODULE_DECODEIO = 0x03
+    MODULE_MMCTRIGGER = 0x04
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -786,6 +787,7 @@ class CWExtraSettings(Parameterized):
 
         if cwtype == "cwlite":
             trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
+            trigger_modules["MMC Trigger"] = self.MODULE_MMCTRIGGER
         elif cwtype == "cw1200":
             trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
             trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO

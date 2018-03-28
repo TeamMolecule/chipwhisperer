@@ -166,7 +166,6 @@ module reg_mmctrigger(
 	/* Trigger output */
 	reg trig;
 	reg trig_s1, trig_sync;
-	reg trig_ack;
 	reg trig_ack_s1, trig_ack_sync;
 	reg [6:0] trig_cnt;
 
@@ -180,8 +179,10 @@ module reg_mmctrigger(
 
 	//Stretch trig_out for slower ADC clocks if needed (stretches for 127 cycles)
 	always @(posedge clk) begin
-		if (trig_sync) begin
-			trig_ack <= 1;
+		if (reset_i) begin
+			trig_cnt <= 0;
+			trig_out <= 0;
+		end else if (trig_sync) begin
 			trig_cnt <= 7'd1;
 			trig_out <= 1;
 		end else begin
@@ -210,7 +211,7 @@ module reg_mmctrigger(
 			trig_ack_s1 <= 0;
 			trig_ack_sync <= 0;
 		end else begin
-			trig_ack_s1 <= trig_ack;
+			trig_ack_s1 <= trig_sync;
 			trig_ack_sync <= trig_ack_s1;
 		end
 	end

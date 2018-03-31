@@ -456,8 +456,8 @@ class ChipWhispererGlitch(Parameterized):
             {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine, 'get':self.getGlitchOffsetFine},
             {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
             {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'set':self.setArmTiming, 'get':self.getArmTiming},
-            {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
-            {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
+            {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 2**32-1), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
+            {'name':'Repeat', 'type':'int', 'limits':(1,2**32), 'set':self.setNumGlitches, 'get':self.numGlitches},
             {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': self.glitchManual},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
             {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
@@ -758,7 +758,7 @@ class ChipWhispererGlitch(Parameterized):
             num = 1
         num = num - 1
 
-        resp = self.oa.sendMessage(CODE_READ, glitchrep, Validate=False, maxResp=8)
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
         if resp is None or len(resp) < 8:
             logging.warning('Glitch Module not present?')

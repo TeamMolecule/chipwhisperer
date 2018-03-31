@@ -82,7 +82,7 @@ class ChipWhispererMMCTrigger(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_MMCTRIGCFG, Validate=False, maxResp=8)
         cmp_trans_en = direction > 0
         trans = direction - 1 if cmp_trans_en else 0
-        data[0] = (data[0] & ~0x01) | cmp_trans_en
+        data[0] = (data[0] & ~0x01) | (cmp_trans_en << 0)
         data[3] = (data[3] & ~0x40) | (trans << 6)
         self.oa.sendMessage(CODE_WRITE, ADDR_MMCTRIGCFG, data)
 
@@ -97,7 +97,7 @@ class ChipWhispererMMCTrigger(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_MMCTRIGCFG, Validate=False, maxResp=8)
         cmp_data_en = op > 0
         cmp_data_op = op - 1 if cmp_data_en else 0
-        data[0] = (data[0] & ~0x04) | cmp_data_en
+        data[0] = (data[0] & ~0x04) | (cmp_data_en << 2)
         data[0] = (data[0] & ~0x30) | (cmp_data_op << 4)
         self.oa.sendMessage(CODE_WRITE, ADDR_MMCTRIGCFG, data)
 
@@ -111,7 +111,7 @@ class ChipWhispererMMCTrigger(Parameterized):
 
     @setupSetParam("Data")
     def setTriggerData(self, num):
-        raw = int(num)
+        raw = int(num, 0)
         data = self.oa.sendMessage(CODE_READ, ADDR_MMCTRIGCFG, Validate=False, maxResp=8)
         data[4] = ((raw >> 0) & 0xFF)
         data[5] = ((raw >> 8) & 0xFF)

@@ -388,8 +388,8 @@ module cwlite_interface(
 		.reg_stream(),
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_mmctarg),
-		.target_mmc_clk(target_hs1),
-		.target_mmc_cmd(target_hs2)					              
+		.target_mmc_clk(target_io3),
+		.target_mmc_cmd(target_io4)					              
    );
 	
 	reg_mmctrigger registers_mmctrigger (
@@ -407,8 +407,8 @@ module cwlite_interface(
 		.reg_hyplen(reg_hyplen_mmctrig),
 		.reg_stream(),
 		
-		.target_mmc_clk(target_hs1),
-		.target_mmc_cmd(target_hs2),
+		.target_mmc_clk(target_io3),
+		.target_mmc_cmd(target_io4),
 				
 		.trig_out(mmc_trigger)
 	);

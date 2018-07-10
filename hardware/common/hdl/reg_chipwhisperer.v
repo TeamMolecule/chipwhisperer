@@ -63,6 +63,7 @@ module reg_chipwhisperer(
 	
 	/* Clock Sources */
 	input				clkgen_i,
+	input				clkgen_div_i,
 	input				glitchclk_i,
 	
 	/* GPIO Pins & Routing */
@@ -121,6 +122,7 @@ module reg_chipwhisperer(
 					
 			RO = (Bit 6/Bit 5) Rear Clock Out Source
        		  00 : Disabled (constant)
+				  01 : CLKGEN (Divided)
 				  10 : CLKGEN
 				  11 : Glitch Module
 				  
@@ -264,17 +266,19 @@ module reg_chipwhisperer(
 `endif
 	*/ 
 	
-	wire rearclk;
+	wire rearclk1, rearclk2;
 	
 	BUFGMUX #(
 	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
 	)
 	clkgenfx_mux (
-	.O(rearclk), // 1-bit output: Clock buffer output
+	.O(rearclk1), // 1-bit output: Clock buffer output
 	.I0(clkgen_i), // 1-bit input: Clock buffer input (S=0)
 	.I1(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
 	.S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
 	);
+	
+	assign rearclk2 = registers_cwextclk[6] ? rearclk1 : clkgen_div_i;
 	
 	/*
 `ifdef SUPPORT_AUXLINE
@@ -319,7 +323,7 @@ module reg_chipwhisperer(
 	);
 	*/
 	
-	assign extclk_rearout_o = (registers_cwextclk[6] & (~targetio_highz)) ? rearclk : 1'bZ;
+	assign extclk_rearout_o = ((registers_cwextclk[6:5] != 2'b00) & (~targetio_highz)) ? rearclk2 : 1'bZ;
 	
 	//Output clock using DDR2 block (recommended for Spartan-6 device)
 	ODDR2 #(

@@ -42,6 +42,7 @@ ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
+ADDR_CLKDIV = 49
 ADDR_IOROUTE = 55
 
 # API aliases for the TIO settings
@@ -832,9 +833,16 @@ class CWExtraSettings(Parameterized):
         if self.forceclkin:
             self.setClockSource(self.CLOCK_RTIOIN, blockSignal=True)
 
+        if cwtype == "cwlite":
+            ret.extend([
+                {'name':'CLKGEN Divider', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDivider, 'get':self.clkgenDivider,
+                 'help':'%namehdr%'+
+                            'Set 1 for no divide (divide 1) otherwise CLKGEN will be divided by value*2. E.g. Set to 3 to divide CLKGEN by 6. This can be used for target HS IO-Out.'},
+            ])
+
         ret.extend([
             {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
-            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
+            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN (Divided)':1, 'CLKGEN':2, 'Glitch Module':3}, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
         ])
 
         if self.hasGlitchOut:
@@ -1042,6 +1050,16 @@ class CWExtraSettings(Parameterized):
     def getTargetIOMode(self, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         return data[IONumber]
+
+    @setupSetParam("CLKGEN Divider")
+    def setClkgenDivider(self, div):
+        data = self.oa.sendMessage(CODE_READ, ADDR_CLKDIV, Validate=False, maxResp=1)
+        data[0] = div - 1
+        self.oa.sendMessage(CODE_WRITE, ADDR_CLKDIV, data)
+
+    def clkgenDivider(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_CLKDIV, Validate=False, maxResp=1)
+        return resp[0]+1
 
     @setupSetParam("Clock Source")
     def setClockSource(self, source):

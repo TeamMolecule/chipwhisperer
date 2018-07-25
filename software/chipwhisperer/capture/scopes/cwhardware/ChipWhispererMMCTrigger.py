@@ -48,7 +48,7 @@ class ChipWhispererMMCTrigger(Parameterized):
             {'name':'Direction', 'type': 'list', 'values': {'Both': 0, 'Response Only': 1, 'Command Only':2}, 'get':self.direction, 'set':self.setDirection, 'help':"Command is sent from host to device, response is sent from device to host."},
             {'name':'Data Compare', 'type': 'list', 'values': {'Disabled': 0, 'Equals': 1, 'Not Equals':2, 'Less Than':3, 'Greater Than':4}, 'get':self.dataCompareOp, 'set':self.setDataCompareOp, 'help':"Compares the data field to the specified value using the specified operator."},
             {'name':'Data', 'type':'str', 'get':self.triggerData, 'set':self.setTriggerData, 'help':"Only used if Data Compare is not disabled. Can be decimal or hexadecimal prefixed with 0x. 32-bits."},
-            {'name':'Trigger on successive packet', 'type':'bool', 'set':self.setTriggerNext, 'get':self.triggerNext, 'help':"If set, will trigger on the NEXT packet after the current packet matches other conditions. Useful for triggering on a response to a request for example."},
+            {'name':'Trigger on successive cmd', 'type':'bool', 'set':self.setTriggerNext, 'get':self.triggerNext, 'help':"If set, will trigger on the NEXT cmd after the current packet matches other conditions. Useful for triggering on a SEND_STATUS after READ_SINGLE_BLOCK for example."},
         ])
 
     def matchCmd(self):
@@ -123,7 +123,7 @@ class ChipWhispererMMCTrigger(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_MMCTRIGCFG, Validate=False, maxResp=8)
         return (data[0] & 0x08) == 0x08
 
-    @setupSetParam("Trigger on successive packet")
+    @setupSetParam("Trigger on successive cmd")
     def setTriggerNext(self, succ):
         data = self.oa.sendMessage(CODE_READ, ADDR_MMCTRIGCFG, Validate=False, maxResp=8)
         data[0] = (data[0] & ~0x08) | (succ << 3)

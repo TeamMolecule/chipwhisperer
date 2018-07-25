@@ -124,7 +124,7 @@ end
 // capture
 wire [47:0] capture_packet;
 wire capture_packet_valid;
-mmc_msg_capture #(.DATA_RELATED_ONLY(1)) msg_capture (
+mmc_msg_capture #(.DATA_RELATED_ONLY(0)) msg_capture (
 	.clk(clk),
 	.reset_i(reset_i),
 	.mmc_clk(target_mmc_clk),
@@ -132,6 +132,33 @@ mmc_msg_capture #(.DATA_RELATED_ONLY(1)) msg_capture (
 	.msg_packet(capture_packet),
 	.msg_valid(capture_packet_valid)
 );
+
+// synchronizer
+reg [47:0] capture_packet_s1, capture_packet_sync;
+reg capture_packet_valid_s1, capture_packet_valid_sync, capture_packet_valid_sync_2;
+reg [15:0] packet_id_s1, packet_id_sync;
+wire wr_en;
+
+always @(posedge clk or posedge reset_i) begin
+	if (reset_i) begin
+		capture_packet_s1 <= 48'b0;
+		capture_packet_sync <= 48'b0;
+		capture_packet_valid_s1 <= 1'b0;
+		capture_packet_valid_sync <= 1'b0;
+		packet_id_s1 <= 16'b0;
+		packet_id_sync <= 16'b0;
+	end else begin
+		capture_packet_s1 <= capture_packet;
+		capture_packet_valid_s1 <= capture_packet_valid;
+		capture_packet_sync <= capture_packet_s1;
+		capture_packet_valid_sync <= capture_packet_valid_s1;
+		capture_packet_valid_sync_2 <= capture_packet_valid_sync;
+		packet_id_s1 <= packet_id;
+		packet_id_sync <= packet_id_s1;
+	end
+end
+
+assign wr_en = capture_packet_valid_sync && !capture_packet_valid_sync_2;
 
 // fifo
 fifo_mmc_cmd tx_fifo (

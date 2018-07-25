@@ -140,6 +140,7 @@ module reg_mmctrigger(
 	wire transmission_matches;
 	wire all_matches;
 	reg last_all_matches;
+	wire is_cmd_packet;
 
 	always @* begin
 		case (cmp_data_op)
@@ -154,11 +155,12 @@ module reg_mmctrigger(
 	assign cmd_matches = (msg_packet[45:40] == cmp_cmd) || !cmp_cmd_en;
 	assign transmission_matches = (msg_packet[46] == cmp_transmission) || !cmp_transmission_en;
 	assign all_matches = data_matches && cmd_matches && transmission_matches;
+	assign is_cmd_packet = (msg_packet[46] == 1'b1);
 
-	always @(posedge msg_valid or posedge reset_i) begin
+	always @(posedge target_mmc_clk or posedge reset_i) begin
 		if (reset_i) begin
 			last_all_matches <= 0;
-		end else begin
+		end else if (msg_valid) begin
 			last_all_matches <= all_matches;
 		end
 	end
@@ -168,11 +170,22 @@ module reg_mmctrigger(
 	reg trig_s1, trig_sync;
 	reg trig_ack_s1, trig_ack_sync;
 	reg [6:0] trig_cnt;
+	reg delay_trig;
 
 	always @(posedge target_mmc_clk or posedge reset_i) begin
 		if (reset_i || trig_ack_sync) begin
 			trig <= 0;
-		end else if (msg_valid && (cmp_delay_next ? last_all_matches : all_matches)) begin
+			delay_trig <= 0;
+		end else if (msg_valid && all_matches) begin
+			if (!cmp_delay_next) begin
+				trig <= 1; // trigger immediately
+			end else begin
+				delay_trig <= 1; // delay until next trigger
+			end
+		end else if (msg_valid && is_cmd_packet && delay_trig) begin
+			if (!all_matches) begin // otherwise this one matches as well
+				delay_trig <= 0;
+			end
 			trig <= 1;
 		end
 	end

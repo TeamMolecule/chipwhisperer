@@ -113,7 +113,7 @@ end
 // counter for packet ordering
 
 reg [15:0] packet_id;
-always @(posedge capture_packet_valid or posedge reset_i) begin
+always @(posedge target_mmc_clk or posedge reset_i) begin
 	if (reset_i) begin
 		packet_id <= 16'b0;
 	end else begin
@@ -135,18 +135,17 @@ mmc_msg_capture #(.DATA_RELATED_ONLY(1)) msg_capture (
 
 // fifo
 fifo_mmc_cmd tx_fifo (
-	.rd_clk(clk),
-	.wr_clk(target_mmc_clk),
+	.clk(clk),
 	.rst(reset_i),
-	.din({packet_id, capture_packet}),
-	.wr_en(capture_packet_valid),
+	.din({packet_id_sync, capture_packet_sync}),
+	.wr_en(wr_en),
 	.rd_en(fifo_rd),
 	.dout(fifo_data),
 	.full(targmmc_status[1]),
 	.empty(targmmc_status[0]),
 	.overflow(targmmc_status[2]),
 	.valid(fifo_data_valid),
-	.rd_data_count(targmmc_len)
+	.data_count(targmmc_len)
 );
 
 /*

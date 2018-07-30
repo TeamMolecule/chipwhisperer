@@ -37,6 +37,11 @@
 #define CIRCBUFSIZE 128
 #endif
 
+
+#ifndef CIRCBUFLARGESIZE
+#define CIRCBUFLARGESIZE 4096
+#endif
+
 #define SERIAL_ERR 0xFF
 
 #include <stdint.h>
@@ -45,10 +50,23 @@ typedef struct {
     volatile unsigned int head;
     volatile unsigned int tail;
     volatile unsigned int dropped;
+    unsigned int size;
     uint8_t buf[CIRCBUFSIZE];
 } tcirc_buf;
 
+typedef union {
+    tcirc_buf tcirc_buf;
+    struct {
+        volatile unsigned int head;
+        volatile unsigned int tail;
+        volatile unsigned int dropped;
+        unsigned int size;
+        uint8_t buf[CIRCBUFLARGESIZE];
+    };
+} tcirc_large_buf;
+
 void init_circ_buf(tcirc_buf * cbuf);
+void init_circ_large_buf(tcirc_large_buf * cbuf);
 void add_to_circ_buf(tcirc_buf *cbuf, uint8_t ch, bool block);
 bool circ_buf_has_char(tcirc_buf *cbuf);
 uint8_t get_from_circ_buf(tcirc_buf *cbuf);

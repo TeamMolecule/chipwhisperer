@@ -39,7 +39,20 @@ void init_circ_buf(tcirc_buf *cbuf)
 {
     cbuf->head = cbuf->tail = 0;
     cbuf->dropped = 0;
+    cbuf->size = CIRCBUFSIZE;
 }
+
+/*
+    @brief Initializes the large circular buffer.
+
+    @param cbuf Points to the structure to be initialized.
+*/
+void init_circ_large_buf(tcirc_large_buf *cbuf)
+{
+    init_circ_buf(&cbuf->tcirc_buf);
+    cbuf->size = CIRCBUFLARGESIZE;
+}
+
 
 /*
     @brief This will add a character to the circular buffer.
@@ -53,7 +66,7 @@ void add_to_circ_buf(tcirc_buf *cbuf, uint8_t ch, bool block)
 	cpu_irq_disable();
     unsigned int newhead = cbuf->head;
     newhead++;
-    if (newhead >= CIRCBUFSIZE)
+    if (newhead >= cbuf->size)
         newhead = 0;
     while (newhead == cbuf->tail)
     {
@@ -96,7 +109,7 @@ uint8_t get_from_circ_buf(tcirc_buf *cbuf)
 	}
 
     newtail++;
-    if (newtail >= CIRCBUFSIZE)
+    if (newtail >= cbuf->size)
         // Rollover
         newtail = 0;
     cbuf->tail = newtail;
@@ -135,7 +148,7 @@ unsigned int circ_buf_count(tcirc_buf *cbuf)
     count = cbuf->head;
     count -= cbuf->tail;
     if (count < 0)
-        count += CIRCBUFSIZE;
+        count += cbuf->size;
 		
 	cpu_irq_enable();
     return (unsigned int)count;

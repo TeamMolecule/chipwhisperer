@@ -67,8 +67,8 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
     def hardware_inWaiting(self):
         bwait = self.cwlite_usart.inWaiting()
-        if bwait == 127:
-            logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
+        #if bwait == 127:
+        #    logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
         return bwait
 
     def hardware_write(self, string):

@@ -59,7 +59,8 @@ typedef struct {
 usart_driver_t usarts[NUM_USARTS];
 */
 	
-tcirc_buf rx0buf, tx0buf;
+tcirc_large_buf rx0buf;
+tcirc_buf tx0buf;
 tcirc_buf rx1buf, tx1buf;
 tcirc_buf rx2buf, tx2buf;
 tcirc_buf rx3buf, tx3buf;
@@ -181,7 +182,7 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 						{
 							sysclk_enable_peripheral_clock(ID_USART0);
 							init_circ_buf(&tx0buf);
-							init_circ_buf(&rx0buf);
+							init_circ_large_buf(&rx0buf);
 							printf("Enabling USART0\n");
 						} else if (usart == USART1)
 						{
@@ -253,7 +254,7 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 					udd_g_ctrlreq.payload_size = 4;
 
 					if (usart == USART0){
-						cnt = circ_buf_count(&rx0buf);
+						cnt = circ_buf_count(&rx0buf.tcirc_buf);
 					} else if (usart == USART1){
 						cnt = circ_buf_count(&rx1buf);
 					} else if (usart == USART2){
@@ -304,7 +305,7 @@ uint8_t usart_driver_getchar(Usart * usart)
 {
 	tcirc_buf * rxbuf = NULL;	 
 	if (rxbuf == NULL){
-			if (usart == USART0) rxbuf = &rx0buf;
+			if (usart == USART0) rxbuf = &rx0buf.tcirc_buf;
 			else if (usart == USART1) rxbuf = &rx1buf;
 			else if (usart == USART2) rxbuf = &rx2buf;
 #ifdef USART3
@@ -339,7 +340,7 @@ void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 
 ISR(USART0_Handler)
 {
-	generic_isr(USART0, &rx0buf, &tx0buf);
+	generic_isr(USART0, &rx0buf.tcirc_buf, &tx0buf);
 }
 
 ISR(USART1_Handler)

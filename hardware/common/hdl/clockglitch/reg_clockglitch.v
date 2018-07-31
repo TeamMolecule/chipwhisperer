@@ -56,7 +56,13 @@ module reg_clockglitch(
 	output wire		dcm_unlocked,
 	output wire    led_glitch
    );
-	 
+parameter CLOCKGLITCH_SETTINGS_ADDR = 51;
+parameter CLOCKGLITCH_OFFSET_ADDR = 25;
+parameter CLOCKGLITCH_REPEAT_ADDR = 62;
+parameter GLITCHCYCLES_CNT_ADDR = 19;
+parameter GLITCH_RECONFIG_RB_ADDR = 56;
+parameter SUPPORT_CLOCK_GLITCH = 1;
+
 	 wire	  reset;
 	 assign reset = reset_i;
 	 assign reg_stream = 1'b0;
@@ -88,17 +94,12 @@ module reg_clockglitch(
 	 wire		   phase2_load;
 	 wire		   phase2_done;			
 			  
-	 `define CLOCKGLITCH_SETTINGS	51
 	 `define CLOCKGLITCH_LEN      8
-	 `define CLOCKGLITCH_OFFSET    25
 	 `define CLOCKGLITCH_OFFSET_LEN 8
-	 `define CLOCKGLITCH_REPEAT		62
 	 `define CLOCKGLITCH_REPEAT_LEN 4
 	 
 `ifdef SUPPORT_GLITCH_READBACK
-	 `define GLITCHCYCLES_CNT 19
 	 `define GLITCHCYCLES_CNT_LEN 4
-	 `define GLITCH_RECONFIG_RB_ADDR 56
 	 `define GLITCH_RECONFIG_RB_LEN 16
 	  reg [127:0] clockglitch_readback_reg;
 `endif
@@ -130,12 +131,12 @@ module reg_clockglitch(
 	 
 	 always @(reg_hypaddress) begin
 		case (reg_hypaddress)
-            `CLOCKGLITCH_SETTINGS: reg_hyplen_reg <= `CLOCKGLITCH_LEN;
-				`CLOCKGLITCH_OFFSET: reg_hyplen_reg <= `CLOCKGLITCH_OFFSET_LEN;
-				`CLOCKGLITCH_REPEAT: reg_hyplen_reg <= `CLOCKGLITCH_REPEAT_LEN;
+            CLOCKGLITCH_SETTINGS_ADDR: reg_hyplen_reg <= `CLOCKGLITCH_LEN;
+				CLOCKGLITCH_OFFSET_ADDR: reg_hyplen_reg <= `CLOCKGLITCH_OFFSET_LEN;
+				CLOCKGLITCH_REPEAT_ADDR: reg_hyplen_reg <= `CLOCKGLITCH_REPEAT_LEN;
 `ifdef SUPPORT_GLITCH_READBACK
-				`GLITCHCYCLES_CNT: reg_hyplen_reg <= `GLITCHCYCLES_CNT_LEN;
-				`GLITCH_RECONFIG_RB_ADDR: reg_hyplen_reg <= `GLITCH_RECONFIG_RB_LEN;
+				GLITCHCYCLES_CNT_ADDR: reg_hyplen_reg <= `GLITCHCYCLES_CNT_LEN;
+				GLITCH_RECONFIG_RB_ADDR: reg_hyplen_reg <= `GLITCH_RECONFIG_RB_LEN;
 `endif
 				default: reg_hyplen_reg<= 0;
 		endcase
@@ -311,12 +312,12 @@ module reg_clockglitch(
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
-				`CLOCKGLITCH_SETTINGS: begin reg_datao_reg <= clockglitch_settings_read[reg_bytecnt*8 +: 8]; end
-				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_read_reg[reg_bytecnt*8 +: 8]; end
-				`CLOCKGLITCH_REPEAT: begin reg_datao_reg <= clockglitch_repeat_reg[reg_bytecnt*8 +: 8]; end
+				CLOCKGLITCH_SETTINGS_ADDR: begin reg_datao_reg <= clockglitch_settings_read[reg_bytecnt*8 +: 8]; end
+				CLOCKGLITCH_OFFSET_ADDR: begin reg_datao_reg <= clockglitch_offset_read_reg[reg_bytecnt*8 +: 8]; end
+				CLOCKGLITCH_REPEAT_ADDR: begin reg_datao_reg <= clockglitch_repeat_reg[reg_bytecnt*8 +: 8]; end
 `ifdef SUPPORT_GLITCH_READBACK
-				`GLITCH_RECONFIG_RB_ADDR: begin reg_datao_reg <= clockglitch_readback_reg[reg_bytecnt*8 +: 8]; end
-				`GLITCHCYCLES_CNT: begin reg_datao_reg <= clockglitch_cnt[reg_bytecnt*8 +: 8]; end
+				GLITCH_RECONFIG_RB_ADDR: begin reg_datao_reg <= clockglitch_readback_reg[reg_bytecnt*8 +: 8]; end
+				GLITCHCYCLES_CNT_ADDR: begin reg_datao_reg <= clockglitch_cnt[reg_bytecnt*8 +: 8]; end
 `endif
 				default: begin reg_datao_reg <= 0; end
 			endcase
@@ -326,7 +327,7 @@ module reg_clockglitch(
 	 /* Know when all settings have been written successfully */
 	 /*
 	 always @(posedge clk) begin
-		if ((reg_write) && (reg_address == `CLOCKGLITCH_SETTINGS)) begin
+		if ((reg_write) && (reg_address == CLOCKGLITCH_SETTINGS_ADDR)) begin
 			if (reg_bytecnt == 16'd7) begin
 				regwrite_done <= 1'b1;			
 			end else begin
@@ -353,12 +354,12 @@ module reg_clockglitch(
 			
 		end else if (reg_write) begin
 			case (reg_address)
-				`CLOCKGLITCH_SETTINGS: clockglitch_settings_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
-				`CLOCKGLITCH_OFFSET: clockglitch_offset_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
-				`CLOCKGLITCH_REPEAT: clockglitch_repeat_reg[reg_bytecnt*8 +: 8] <= reg_datai;
+				CLOCKGLITCH_SETTINGS_ADDR: clockglitch_settings_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				CLOCKGLITCH_OFFSET_ADDR: clockglitch_offset_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				CLOCKGLITCH_REPEAT_ADDR: clockglitch_repeat_reg[reg_bytecnt*8 +: 8] <= reg_datai;
 `ifdef SUPPORT_GLITCH_READBACK
-				`GLITCHCYCLES_CNT: clockglitch_cnt_rst <= reg_datai[0];
-				`GLITCH_RECONFIG_RB_ADDR: clockglitch_readback_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				GLITCHCYCLES_CNT_ADDR: clockglitch_cnt_rst <= reg_datai[0];
+				GLITCH_RECONFIG_RB_ADDR: clockglitch_readback_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 `endif
 				default: ;
 			endcase
@@ -377,24 +378,45 @@ module reg_clockglitch(
 	);
 
 	 /* Glitch Hardware */
-	 clockglitch_s6 gc(
-		.source_clk(sourceclk),
-		.glitched_clk(glitchclk),
-		.glitch_next(glitch_go),
-		.glitch_type(glitch_type),
-		.phase_clk(clk),
-		.dcm_rst(dcm_rst),
-		.phase1_requested(phase1_requested),
-		.phase1_actual(phase1_actual),
-		.phase1_load(phase1_load),
-		.phase1_done(phase1_done),
-		.dcm1_locked(dcm1_locked),
-		.phase2_requested(phase2_requested),
-		.phase2_actual(phase2_actual),
-		.phase2_load(phase2_load),
-		.phase2_done(phase2_done),
-		.dcm2_locked(dcm2_locked)
-	);
+	 generate
+	 	if (SUPPORT_CLOCK_GLITCH) begin
+			 clockglitch_s6 gc(
+				.source_clk(sourceclk),
+				.glitched_clk(glitchclk),
+				.glitch_next(glitch_go),
+				.glitch_type(glitch_type),
+				.phase_clk(clk),
+				.dcm_rst(dcm_rst),
+				.phase1_requested(phase1_requested),
+				.phase1_actual(phase1_actual),
+				.phase1_load(phase1_load),
+				.phase1_done(phase1_done),
+				.dcm1_locked(dcm1_locked),
+				.phase2_requested(phase2_requested),
+				.phase2_actual(phase2_actual),
+				.phase2_load(phase2_load),
+				.phase2_done(phase2_done),
+				.dcm2_locked(dcm2_locked)
+			);
+		end else begin
+				reg glitch_next_reg;
+				reg glitch_next_reg1;
+				//Need to think carefully about which clock to syncronize this too, and
+				//which edge. Lots of trouble as different options on outputs & adjustable
+				//phase
+				always @(negedge sourceclk) begin
+					glitch_next_reg1 <= glitch_go;
+					glitch_next_reg <= glitch_next_reg1;
+				end
+				assign glitchclk = (glitch_type == 3'b100) ? glitch_next_reg : 1'b0;
+				assign phase1_actual = 1'b0;
+				assign phase1_done = 1'b0;
+				assign dcm1_locked = 1'b0;
+				assign phase2_actual = 1'b0;
+				assign phase2_done = 1'b0;
+				assign dcm2_locked = 1'b0;
+		end
+	endgenerate
 	
 	/* LED lighty up thing */
 	reg [18:0] led_extend;

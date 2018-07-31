@@ -121,6 +121,7 @@ module cwlite_interface(
 	wire [7:0] reg_datai_cw;
 	wire [7:0] reg_datai_reconfig;
 	wire [7:0] reg_datai_glitch;
+	wire [7:0] reg_datai_glitch2;
 	wire [7:0] reg_datai_decode;
 	wire [7:0] reg_datai_mmctarg;
 	wire [7:0] reg_datai_mmctrig;
@@ -133,6 +134,7 @@ module cwlite_interface(
 	wire [5:0] reg_hypaddr;
 	wire [15:0] reg_hyplen_cw;
 	wire [15:0] reg_hyplen_glitch;
+	wire [15:0] reg_hyplen_glitch2;
 	wire [15:0] reg_hyplen_reconfig;
 	wire [15:0] reg_hyplen_decode;
 	wire [15:0] reg_hyplen_mmctarg;
@@ -140,9 +142,10 @@ module cwlite_interface(
 	wire [15:0] reg_hyplen_edgetrig;
 	wire [15:0] reg_hyplen_clkdiv;
 	
-	wire ext_trigger;
+	wire [1:0] ext_trigger;
 	wire extclk_mux;
-	wire clkgen, glitchclk, adc_sample_clk;
+	wire clkgen, adc_sample_clk;
+	wire [1:0] glitchclk;
 	wire enable_avrprog;
 	wire advio_trigger_line;
 	wire decode_trigger;
@@ -171,7 +174,7 @@ module cwlite_interface(
 		.ADC_clk(ADC_clk),
 		.ADC_clk_feedback(ADC_clk_fb),
 		.DUT_CLK_i(extclk_mux),
-		.DUT_trigger_i(ext_trigger),
+		.DUT_trigger_i(|ext_trigger),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
 		.target_clk(clkgen),
@@ -180,14 +183,14 @@ module cwlite_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_decode | reg_datai_mmctarg | reg_datai_mmctrig | reg_datai_edgetrig | reg_datai_clkdiv),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_glitch2 | reg_datai_reconfig | reg_datai_decode | reg_datai_mmctarg | reg_datai_mmctrig | reg_datai_edgetrig | reg_datai_clkdiv),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_decode | reg_hyplen_mmctarg | reg_hyplen_mmctrig | reg_hyplen_edgetrig | reg_hyplen_clkdiv)
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_glitch2 | reg_hyplen_reconfig | reg_hyplen_decode | reg_hyplen_mmctarg | reg_hyplen_mmctrig | reg_hyplen_edgetrig | reg_hyplen_clkdiv)
 	);	
 
 	wire clkgen_div;
@@ -250,8 +253,8 @@ module cwlite_interface(
 		.trigger_anapattern_i(1'b0),
 		.trigger_decodedio_i(decode_trigger),
 		.trigger_mmc_i(mmc_trigger),
-		.clkgen_i(clkgen),
-		.clkgen_div_i(clkgen_div),
+		.trigger_edge_i(edge_trigger),
+		.clkgen_i({clkgen_div, clkgen}),
 		.glitchclk_i(glitchclk),
 		
 		.targetio1_io(target_io1),
@@ -296,8 +299,35 @@ module cwlite_interface(
 		.reg_stream(),
 		.sourceclk0(target_hs1),
 		.sourceclk1(clkgen),
-		.glitchclk(glitchclk),
-		.exttrigger(ext_trigger)	
+		.glitchclk(glitchclk[0]),
+		.exttrigger(ext_trigger[0])	
+		);
+		
+	reg_clockglitch #(
+		.CLOCKGLITCH_SETTINGS_ADDR(44), // overlap with reg_usi because there's no free address
+		.CLOCKGLITCH_OFFSET_ADDR(45), // overlap with reg_usi because there's no free address
+		.CLOCKGLITCH_REPEAT_ADDR(46), // overlap with reg_usi because there's no free address
+		.GLITCHCYCLES_CNT_ADDR(19), // SHOULD NOT BE USED
+		.GLITCH_RECONFIG_RB_ADDR(56), // SHOULD NOT BE USED
+		.SUPPORT_CLOCK_GLITCH(0)
+	) reg_clockglitch2(
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_glitch2), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_glitch2),
+		.reg_stream(),
+		.sourceclk0(target_hs1),
+		.sourceclk1(clkgen),
+		.glitchclk(glitchclk[1]),
+		.exttrigger(ext_trigger[1])	
 		);
 	
 `ifdef ENABLE_RECONFIG

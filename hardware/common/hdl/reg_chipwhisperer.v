@@ -63,9 +63,8 @@ module reg_chipwhisperer(
 	input				trigger_edge_i,
 	
 	/* Clock Sources */
-	input				clkgen_i,
-	input				clkgen_div_i,
-	input				glitchclk_i,
+	input	[1:0]			clkgen_i,
+	input	[1:0]			glitchclk_i,
 	
 	/* GPIO Pins & Routing */
 	inout				targetio1_io,
@@ -94,7 +93,7 @@ module reg_chipwhisperer(
 	output			targetpower_off,
 	
 	/* Main trigger connections */
-	output			trigger_o, /* Trigger signal to capture system */
+	output	[1:0]		trigger_o, /* Trigger signal to capture system */
 	input				adccapture_i, /* ADC capture in progress */
 	output			led_auxi,
 	output			led_auxo
@@ -147,13 +146,15 @@ module reg_chipwhisperer(
 						
 	  0xXX - Trigger Module Enabled
 	  
-	   [ X  X  X  FB FA M  M  M ]
+	   [ N N N  FB FA M  M  M ]
 		  M M M = 000 Normal Edge-Mode Trigger
 		          001 Advanced IO Pattern Trigger
 					 010 Advanced SAD Trigger	
 					 
 		  FA = Output trigger to Front Panel A / Aux SMA
 		  FB = Output trigger to Front Panel B
+
+		  N N N = Second trigger selection (same format as M M M except 000 = Disabled)
 		  
 	  0xXX - GPIO Pin Routing [8 bytes]
 	   
@@ -250,9 +251,9 @@ module reg_chipwhisperer(
 	 //TODO: Should use a mux?
 	 //The glitch-clock comes from the fabric anyway, but the clkgen comes from the DCM. Either way we are jumping back
 	 //and forth a lot.
-	 assign extclk_fpa_io = (registers_cwextclk[4:3] == 2'b00) ? trigger : /* adccapture_i */
-                           (registers_cwextclk[4:3] == 2'b01) ? clkgen_i :
-	 							   (registers_cwextclk[4:3] == 2'b10) ? glitchclk_i :
+	 assign extclk_fpa_io = (registers_cwextclk[4:3] == 2'b00) ? |trigger : /* adccapture_i */
+                           (registers_cwextclk[4:3] == 2'b01) ? clkgen_i[0] :
+	 							   (registers_cwextclk[4:3] == 2'b10) ? glitchclk_i[0] :
 	 							    1'bZ;
 
 /*	 
@@ -274,12 +275,12 @@ module reg_chipwhisperer(
 	)
 	clkgenfx_mux (
 	.O(rearclk1), // 1-bit output: Clock buffer output
-	.I0(clkgen_i), // 1-bit input: Clock buffer input (S=0)
-	.I1(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
+	.I0(clkgen_i[0]), // 1-bit input: Clock buffer input (S=0)
+	.I1(glitchclk_i[0]), // 1-bit input: Clock buffer input (S=1)
 	.S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
 	);
 	
-	assign rearclk2 = registers_cwextclk[6] ? rearclk1 : clkgen_div_i;
+	assign rearclk2 = registers_cwextclk[6] ? rearclk1 : clkgen_i[1];
 	
 	/*
 `ifdef SUPPORT_AUXLINE
@@ -289,8 +290,8 @@ module reg_chipwhisperer(
 	)
 	clkauxline_mux (
 	.O(extclk_fpa_int_o), // 1-bit output: Clock buffer output
-	.I1(clkgen_i), // 1-bit input: Clock buffer input (S=0)
-	.I0(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
+	.I1(clkgen_i[0]), // 1-bit input: Clock buffer input (S=0)
+	.I0(glitchclk_i[0]), // 1-bit input: Clock buffer input (S=1)
 	.S(registers_cwextclk[4]) // 1-bit input: Clock buffer select
 	);
 
@@ -339,8 +340,8 @@ module reg_chipwhisperer(
 	)
 	ODDR2_hsglitcha (
 		.Q(hsglitcha_o),   // 1-bit DDR output data
-		.C0(glitchclk_i), // 1-bit clock input
-		.C1(~glitchclk_i), // 1-bit clock input
+		.C0(|glitchclk_i), // 1-bit clock input
+		.C1(~(|glitchclk_i)), // 1-bit clock input
 		.CE(registers_iorouting[32]), // 1-bit clock enable input
 		.D0(1'b1), // 1-bit data input (associated with C0)
 		.D1(1'b0), // 1-bit data input (associated with C1)
@@ -362,7 +363,7 @@ module reg_chipwhisperer(
 	ODDR2_hsglitchb (
 		.Q(hsglitchb_o),   // 1-bit DDR output data
 		.C0(glitchclk_i), // 1-bit clock input
-		.C1(~glitchclk_i), // 1-bit clock input
+		.C1(~(|glitchclk_i)), // 1-bit clock input
 		.CE(registers_iorouting[33]), // 1-bit clock enable input
 		.D0(1'b1), // 1-bit data input (associated with C0)
 		.D1(1'b0), // 1-bit data input (associated with C1)
@@ -424,8 +425,8 @@ module reg_chipwhisperer(
 	
 	 //TODO: Should use a mux?
 	 /*
-	 assign extclk_rearout_o = (registers_cwextclk[6:5] == 2'b01) ? clkgen_i :
-								  (registers_cwextclk[6:5] == 2'b10) ? glitchclk_i :
+	 assign extclk_rearout_o = (registers_cwextclk[6:5] == 2'b01) ? clkgen_i[0] :
+								  (registers_cwextclk[6:5] == 2'b10) ? glitchclk_i[0] :
 								  1'bZ;	
 	 */
 		
@@ -454,22 +455,29 @@ module reg_chipwhisperer(
 								  (registers_cwtrigsrc[7:6] == 2'b10) ? (~trigger_and) :
 								  1'b0;
 	
-	 wire trigger;	 		  
-	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
+	 wire [1:0] trigger;	 		  
+	 assign trigger[0] = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
 						   (registers_cwtrigmod[2:0] == 3'b001) ? trigger_advio_i : 
 							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i :
 							(registers_cwtrigmod[2:0] == 3'b011) ? trigger_decodedio_i :
 							(registers_cwtrigmod[2:0] == 3'b100) ? trigger_mmc_i :
 							(registers_cwtrigmod[2:0] == 3'b101) ? trigger_edge_i
+							: 1'b0; 
+
+	 assign trigger[1] = (registers_cwtrigmod[7:5] == 3'b001) ? trigger_advio_i : 
+							(registers_cwtrigmod[7:5] == 3'b010) ? trigger_anapattern_i :
+							(registers_cwtrigmod[7:5] == 3'b011) ? trigger_decodedio_i :
+							(registers_cwtrigmod[7:5] == 3'b100) ? trigger_mmc_i :
+							(registers_cwtrigmod[7:5] == 3'b101) ? trigger_edge_i
 							: 1'b0;
 							
 	 assign trigger_ext_o = trigger_ext;
 	 
 	 assign trigger_o = trigger;
 	 
-	 assign fpa_trigger_int = (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
+	 assign fpa_trigger_int = (registers_cwtrigmod[3] == 1'b1) ? |trigger : 1'bZ;
 	 assign trigger_fpa_i =  fpa_trigger_int;
-	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
+	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? |trigger : 1'bZ;	 
 	 
 	 
 `ifdef SUPPORT_AUXLINE

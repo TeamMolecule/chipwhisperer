@@ -681,9 +681,11 @@ class ChipWhispererExtra(Parameterized):
         self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
+            self.vddglitch = ChipWhispererGlitch.ChipWhispererVddGlitch(cwtype, scope, oa)
 
         self.getParams().append(self.cwEXTRA.getParams())
         self.getParams().append(self.glitch.getParams())
+        self.getParams().append(self.vddglitch.getParams())
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -712,6 +714,7 @@ class CWExtraSettings(Parameterized):
     MODE_NAND = 0x02
 
     MODULE_BASIC = 0x00
+    MODULE_VDD_DISABLED = 0x00
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
     MODULE_DECODEIO = 0x03
@@ -785,8 +788,7 @@ class CWExtraSettings(Parameterized):
 
         # Add trigger pins & modules
 
-        trigger_modules = {"Basic (Edge/Level)": self.MODULE_BASIC}
-
+        trigger_modules = {}
         if cwtype == "cwlite":
             trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
             trigger_modules["MMC Trigger"] = self.MODULE_MMCTRIGGER
@@ -800,10 +802,18 @@ class CWExtraSettings(Parameterized):
         else:
             raise ValueError("Unknown ChipWhisperer %s"%cwtype)
 
+        vdd_trigger_modules = trigger_modules.copy()
+
+        trigger_modules["Basic (Edge/Level)"] = self.MODULE_BASIC
+        vdd_trigger_modules["Disabled"] = self.MODULE_VDD_DISABLED
+
+
         ret.extend([
             {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
             {'name': 'Trigger Module', 'type':'list', 'values':trigger_modules,
-             'set':self.setTriggerModule, 'get':self.getTriggerModule}
+             'set':self.setTriggerModule, 'get':self.getTriggerModule},
+            {'name': 'VDD Trigger Module', 'type':'list', 'values':vdd_trigger_modules,
+             'set':self.setVddTriggerModule, 'get':self.getVddTriggerModule}
         ])
 
         # Generate list of clock sources present in the hardware
@@ -1201,6 +1211,17 @@ class CWExtraSettings(Parameterized):
     def getTriggerModule(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
+
+    @setupSetParam("VDD Trigger Module")
+    def setVddTriggerModule(self, module):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0x1F
+        resp[0] |= (module << 5)
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def getVddTriggerModule(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return (resp[0] >> 5)
 
     @setupSetParam("Trigger Out on Aux")
     def setTrigOutAux(self, enabled):

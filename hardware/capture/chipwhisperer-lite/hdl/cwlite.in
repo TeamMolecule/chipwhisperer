@@ -63,6 +63,7 @@ setup.v = Setup File
 ../../../common/hdl/mmctarget/mmc_msg_capture.v
 ../../../common/hdl/mmc_trigger/reg_mmctrigger.v
 ../../../common/hdl/clkdiv/reg_clkdiv.v
+../../../common/hdl/edge_trigger/reg_edgetrigger.v
 
 [CoreGen Files]
 #Add XCO files. You can just list the filename, OR have the CoreGen files be

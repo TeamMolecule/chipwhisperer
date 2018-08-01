@@ -191,6 +191,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
                 self.glitch = self.advancedSettings.glitch.glitchSettings
+                self.vddglitch = self.advancedSettings.vddglitch.glitchSettings
 
             self.disable_newattr()
             self._is_connected = True
@@ -271,6 +272,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         dict['trigger'] = self.trigger._dict_repr()
         dict['io']      = self.io._dict_repr()
         dict['glitch']  = self.glitch._dict_repr()
+        dict['vddglitch']  = self.vddglitch._dict_repr()
 
         return dict
 

@@ -362,7 +362,7 @@ module reg_chipwhisperer(
 	)
 	ODDR2_hsglitchb (
 		.Q(hsglitchb_o),   // 1-bit DDR output data
-		.C0(glitchclk_i), // 1-bit clock input
+		.C0(|glitchclk_i), // 1-bit clock input
 		.C1(~(|glitchclk_i)), // 1-bit clock input
 		.CE(registers_iorouting[33]), // 1-bit clock enable input
 		.D0(1'b1), // 1-bit data input (associated with C0)

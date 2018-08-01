@@ -75,8 +75,8 @@ class ChipWhispererEdgeTrigger(Parameterized):
                 {'name': 'Target nRST', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_NRST), 'set':partial(self.setPin, pin=self.PIN_NRST)},
                 {'name': 'Target PDIC', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_PDIC), 'set':partial(self.setPin, pin=self.PIN_PDIC)},
                 {'name': 'Target PDID', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_PDID), 'set':partial(self.setPin, pin=self.PIN_PDID)},
-                {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND, "NAND":self.MODE_NAND}, 'get':self.getPinMode, 'set':self.setPinMode},
             ]},
+            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND, "NAND":self.MODE_NAND}, 'get':self.getPinMode, 'set':self.setPinMode},
             {'name': 'Trigger Edge', 'type':'list', 'values':{"Rising Only":self.EDGE_RISING, "Falling Only":self.EDGE_FALLING, "Both Edges":self.EDGE_BOTH}, 'get':self.edgeStyle, 'set':self.setEdgeStyle},
             {'name': 'Times Seen', 'type':'int', 'limits':(1, 63), 'set':self.setFilter, 'get':self.filter,
              'help': '%namehdr%'+
@@ -111,7 +111,7 @@ class ChipWhispererEdgeTrigger(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EDGETRIGCFG, Validate=False, maxResp=4)
         return resp[2] & 0x3
 
-    @setupSetParam("Edge Style")
+    @setupSetParam("Trigger Edge")
     def setEdgeStyle(self, style):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EDGETRIGCFG, Validate=False, maxResp=4)
         resp[2] = (resp[2] & ~0xC) | (style << 2)
@@ -121,7 +121,7 @@ class ChipWhispererEdgeTrigger(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EDGETRIGCFG, Validate=False, maxResp=4)
         return (resp[2] >> 2) & 0x3
 
-    @setupSetParam("Filter")
+    @setupSetParam("Times Seen")
     def setFilter(self, count):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EDGETRIGCFG, Validate=False, maxResp=4)
         resp[2] = (resp[2] & ~0xF0) | ((count & 0xF) << 4)

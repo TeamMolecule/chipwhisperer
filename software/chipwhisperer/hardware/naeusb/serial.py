@@ -129,7 +129,7 @@ class USART(object):
         # print "Checking Waiting..."
         data = self._usartRxCmd(self.USART_CMD_NUMWAIT, dlen=4)
         # print data
-        return data[0]
+        return (data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24))
 
     def read(self, dlen=0, timeout=0):
         """
@@ -149,11 +149,11 @@ class USART(object):
         resp = []
 
         while dlen and timeout > 0:
-            if waiting > 0:
-                newdata = self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen), timeout=timeout)
+            while dlen and waiting > 0:
+                newdata = self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen, 128), timeout=timeout)
                 resp.extend(newdata)
                 dlen -= len(newdata)
-            waiting = self.inWaiting()
+                waiting = self.inWaiting()
             timeout -= 1
             time.sleep(0.001)
 

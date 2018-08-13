@@ -563,7 +563,7 @@ bool main_setup_in_received(void)
 			sizeof(main_buf_loopback) );
 	*/
 	
-	static uint8_t  respbuf[4096];
+	static uint8_t  respbuf[128];
 	unsigned int cnt;
 	
 	if (udd_g_ctrlreq.req.wLength > sizeof(respbuf)){

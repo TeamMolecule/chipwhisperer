@@ -149,6 +149,7 @@ class USART(object):
         resp = []
 
         while dlen and timeout > 0:
+            waiting = self.inWaiting()
             while dlen and waiting > 0:
                 newdata = self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen, 128), timeout=timeout)
                 resp.extend(newdata)

@@ -87,7 +87,7 @@ class GPIOSettings(util.DisableNewAttr):
             {'Serial TXD': self.cwe.IOROUTE_STX, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ}
         ]
 
-        self.HS2_VALID = {'disabled': 0, 'clkgen': 2, 'glitch': 3}
+        self.HS2_VALID = {'disabled': 0, 'clkgen_divided': 1, 'clkgen': 2, 'glitch': 3}
 
         self.disable_newattr()
 

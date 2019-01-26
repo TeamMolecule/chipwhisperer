@@ -49,6 +49,7 @@ class ResyncPeakDetect(PreprocessingBase):
         self._ccEnd = 0
         self._limit = 0
         self._type = "max"
+        self._dirty = True
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
@@ -78,11 +79,13 @@ class ResyncPeakDetect(PreprocessingBase):
         if not isinstance(num, (int, long)):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
+        self._dirty = True
 
     @setupSetParam("Peak Type")
     def _setType(self, type):
         self._type = type
         self._calculateRef()
+        self._dirty = True
 
     def _getType(self):
         return self._type
@@ -102,11 +105,13 @@ class ResyncPeakDetect(PreprocessingBase):
         valid = ["min", "max"]
         if type not in valid:
             raise ValueError("Unrecognized peak type; expected 'min' or 'max'", type)
+        self._dirty = True
 
     @setupSetParam("Point Range")
     def _setWindow(self, window):
         self._ccStart, self._ccEnd = window
         self._calculateRef()
+        self._dirty = True
 
     def _getWindow(self):
         return (self._ccStart, self._ccEnd)
@@ -131,11 +136,13 @@ class ResyncPeakDetect(PreprocessingBase):
         if not isinstance(win[1], (int, long)):
             raise TypeError("Expected int; got %s" % type(win[1]), win[1])
         self._setWindow(win)
+        self._dirty = True
 
     @setupSetParam("Valid Limit")
     def _setLimit(self, lim):
         self._limit = lim
         self._calculateRef()
+        self._dirty = True
 
     def _getLimit(self):
         return self._limit
@@ -158,6 +165,7 @@ class ResyncPeakDetect(PreprocessingBase):
         if not isinstance(lim, float):
             raise TypeError("Expected float; got %s" % type(lim), lim)
         self._setLimit(lim)
+        self._dirty = True
 
     def updateLimits(self):
         if self._traceSource:
@@ -175,6 +183,7 @@ class ResyncPeakDetect(PreprocessingBase):
                             self.findParam('vlimit').getValue()
         ))
         self.updateLimits()
+        self._dirty = True
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):
         self._rtrace = rtraceno
@@ -184,7 +193,7 @@ class ResyncPeakDetect(PreprocessingBase):
         self._ccEnd = refrange[1]
         self.init()
 
-    def getTrace(self, n):
+    def _tryGetTrace(self, n):
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             if trace is None:
@@ -197,7 +206,7 @@ class ResyncPeakDetect(PreprocessingBase):
                 maxval = min(trace[self._ccStart:self._ccEnd])
 
             if self._limit:
-                if (maxval > self._refmaxsize * (1.0 + self._limit)) | (maxval < self._refmaxsize * (1.0 - self._limit)):
+                if (maxval / self._refmaxsize > (1.0 + self._limit)) or (maxval / self._refmaxsize < (1.0 - self._limit)):
                     return None
 
             diff = newmaxloc-self._refmaxloc
@@ -206,6 +215,34 @@ class ResyncPeakDetect(PreprocessingBase):
             elif diff > 0:
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
+        else:
+            return self._traceSource.getTrace(n)
+
+    def _getMappings(self):
+        if self._dirty:
+            self._mapping = []
+            numtraces = self._traceSource.numTraces()
+            for i in range(numtraces):
+                trace = self._tryGetTrace(i)
+                if trace is not None:
+                    self._mapping.append(i)
+            self._dirty = False
+        return self._mapping
+
+    def numTraces(self):
+        if self.enabled:
+            mapping = self._getMappings()
+            return len(mapping)
+        else:
+            return self._traceSource.numTraces()
+
+    def getTrace(self, n):
+        if self.enabled:
+            mapping = self._getMappings()
+            if n < len(mapping):
+                return self._tryGetTrace(mapping[n])
+            else:
+                return None
         else:
             return self._traceSource.getTrace(n)
 

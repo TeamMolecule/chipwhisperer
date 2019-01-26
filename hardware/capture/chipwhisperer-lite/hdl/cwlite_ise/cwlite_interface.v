@@ -174,7 +174,7 @@ module cwlite_interface(
 		.ADC_clk(ADC_clk),
 		.ADC_clk_feedback(ADC_clk_fb),
 		.DUT_CLK_i(extclk_mux),
-		.DUT_trigger_i(|ext_trigger),
+		.DUT_trigger_i(ext_trigger[0]),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
 		.target_clk(clkgen),
